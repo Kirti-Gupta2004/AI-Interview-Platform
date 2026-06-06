@@ -14,7 +14,7 @@ public class GeminiService {
     @Autowired
     private QuestionRepository questionRepository;
 
-    private final String apiKey = "AQ.Ab8RN6ISnidEvtd_xokNe3Z4mcHrzbhssprCmjbmw4umkeRzjQ";
+    private final String apiKey = "YOUR_GEMINI_API_KEY";
     private final String apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
     private final RestTemplate restTemplate = new RestTemplate();
 
