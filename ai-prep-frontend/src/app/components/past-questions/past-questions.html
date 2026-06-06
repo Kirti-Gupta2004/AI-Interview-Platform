@@ -1,0 +1,21 @@
+<div class="past-questions-container">
+  <div class="header-section">
+    <h2>⏳ Your Practice History</h2>
+    <button *ngIf="historyList.length > 0" (click)="clearHistory()" class="btn-clear">Clear All History</button>
+  </div>
+
+  <div *ngIf="historyList.length === 0" class="no-history">
+    <p>Aapne abhi tak koi questions generate nahi kiye hain. Dashboard par jaakar shuru karein!</p>
+  </div>
+
+  <div *ngFor="let item of historyList" class="history-card">
+    <div class="card-meta">
+      <span class="badge-profile">📌 {{ item.profile }}</span>
+      <span class="timestamp">📅 {{ item.date }} at {{ item.time }}</span>
+    </div>
+    
+    <ul class="saved-questions-list">
+      <li *ngFor="let q of item.questions">{{ q }}</li>
+    </ul>
+  </div>
+</div>

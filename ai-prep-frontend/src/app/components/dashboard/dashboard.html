@@ -1,0 +1,56 @@
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="logo-area">
+      <h2>AI PREP 🚀</h2>
+      <p>Interview Prep Bot</p>
+    </div>
+    <nav class="nav-menu">
+      <a routerLink="/" class="nav-item active">📁 Dashboard</a>
+      <a routerLink="/history" class="nav-item">⏳ Past Questions</a>
+    </nav>
+  </aside>
+
+  <main class="main-body">
+    <header class="top-header">
+      <h1>Resume Technical Screener</h1>
+      <p>Upload your resume to get AI-generated customized interview questions instantly.</p>
+    </header>
+
+    <section class="upload-box">
+      <div class="form-group">
+        <label class="custom-file-upload">
+          <input type="file" (change)="onFileSelected($event)" accept=".pdf" />
+          <span>{{ selectedFile ? '📁 ' + selectedFile.name : 'Click to choose Resume (PDF)' }}</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label for="exp">Target Profile / Level:</label>
+        <select id="exp" [(ngModel)]="experienceLevel">
+          <option value="Fresher">Fresher (B.Tech Graduate)</option>
+          <option value="Intermediate">Intermediate (1-2 Yrs Exp)</option>
+          <option value="Senior">Senior Developer</option>
+        </select>
+      </div>
+
+      <button class="btn-primary" (click)="onGenerate()" [disabled]="isLoading">
+        {{ isLoading ? 'Processing with Gemini AI...' : 'Generate Questions 🔥' }}
+      </button>
+    </section>
+
+    <div *ngIf="isLoading" class="loader-container">
+      <div class="spinner"></div>
+      <p>Reading PDF content, aligning skill sets, and generating custom questions...</p>
+    </div>
+
+    <section *ngIf="questionsList.length > 0 && !isLoading" class="results-section">
+      <h3>🎯 Your Customized Technical Questions:</h3>
+      <div class="cards-grid">
+        <div class="card" *ngFor="let item of questionsList">
+          <p>{{ item }}</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
