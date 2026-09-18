@@ -1,8 +1,10 @@
 package com.interview.ai_prep_platform.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interview.ai_prep_platform.entity.Question;
 import com.interview.ai_prep_platform.repository.QuestionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
@@ -11,12 +13,22 @@ import java.util.*;
 @Service
 public class GeminiService {
 
-    @Autowired
-    private QuestionRepository questionRepository;
+    private final QuestionRepository questionRepository;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
 
-    private final String apiKey = "YOUR_GEMINI_API_KEY";
-    private final String apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
-    private final RestTemplate restTemplate = new RestTemplate();
+    @Value("${gemini.api.key}")
+    private String apiKey;
+
+    @Value("${gemini.api.url}")
+    private String apiUrl;
+
+    // Single Clean Constructor
+    public GeminiService(QuestionRepository questionRepository, RestTemplate restTemplate) {
+        this.questionRepository = questionRepository;
+        this.restTemplate = restTemplate;
+        this.objectMapper = new ObjectMapper();
+    }
 
     // 1. Direct Tech aur Experience se question generate aur save karne ka method
     public String generateInterviewQuestions(String technology, String experience) {
@@ -24,14 +36,17 @@ public class GeminiService {
         String promptText = "Act as an expert technical interviewer. Generate 5 unique technical interview questions on "
                 + technology + " for a candidate with " + experience + " experience level. Keep the questions direct.";
 
-        String responseBody = callGeminiApi(fullUrl, promptText);
+        String rawResponseBody = callGeminiApi(fullUrl, promptText);
 
-        // Database mein save karna
-        if (responseBody != null && !responseBody.startsWith("Error")) {
-            saveToDatabase(responseBody, experience);
+        // Raw JSON se clean text nikalna
+        String cleanResponse = extractCleanText(rawResponseBody);
+
+        // Database mein clean text save karna
+        if (cleanResponse != null && !cleanResponse.startsWith("Error")) {
+            saveToDatabase(cleanResponse, experience);
         }
 
-        return responseBody;
+        return cleanResponse;
     }
 
     // 2. Resume Text se question generate aur save karne ka method
@@ -42,14 +57,37 @@ public class GeminiService {
                 + "Generate 10 technical interview questions customized for a candidate with " + experience + " experience level based on those skills.\n\n"
                 + "Candidate Resume Text:\n" + resumeText;
 
-        String responseBody = callGeminiApi(fullUrl, promptText);
+        String rawResponseBody = callGeminiApi(fullUrl, promptText);
 
-        // Database mein save karna
-        if (responseBody != null && !responseBody.startsWith("Error")) {
-            saveToDatabase(responseBody, experience);
+        // Raw JSON se clean text nikalna
+        String cleanResponse = extractCleanText(rawResponseBody);
+
+        // Database mein clean text save karna
+        if (cleanResponse != null && !cleanResponse.startsWith("Error")) {
+            saveToDatabase(cleanResponse, experience);
         }
 
-        return responseBody;
+        return cleanResponse;
+    }
+
+    // Helper method: Gemini API se Raw JSON parse karke clean text nikalne ke liye
+    private String extractCleanText(String rawJsonResponse) {
+        if (rawJsonResponse == null || rawJsonResponse.startsWith("Error")) {
+            return rawJsonResponse;
+        }
+        try {
+            JsonNode rootNode = objectMapper.readTree(rawJsonResponse);
+            return rootNode
+                    .path("candidates")
+                    .get(0)
+                    .path("content")
+                    .path("parts")
+                    .get(0)
+                    .path("text")
+                    .asText();
+        } catch (Exception e) {
+            return rawJsonResponse; // Fallback agar parsing fail ho
+        }
     }
 
     // Helper method to call Gemini API
@@ -76,13 +114,13 @@ public class GeminiService {
     }
 
     // Helper method to save question in MySQL
-    private void saveToDatabase(String rawJson, String experience) {
+    private void saveToDatabase(String questionText, String experience) {
         try {
             Question questionEntity = new Question();
             questionEntity.setExperienceLevel(experience);
-            questionEntity.setQuestionText(rawJson); // Poora JSON response store ho jayega
+            questionEntity.setQuestionText(questionText); // Clean text save hoga
             questionRepository.save(questionEntity);
-            System.out.println(">>> SUCCESS: Questions successfully saved to MySQL database!");
+            System.out.println(">>> SUCCESS: Clean questions successfully saved to MySQL database!");
         } catch (Exception e) {
             System.err.println(">>> ERROR: Failed to save questions to database: " + e.getMessage());
         }

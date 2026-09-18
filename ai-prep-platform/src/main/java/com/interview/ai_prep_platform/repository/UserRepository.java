@@ -11,4 +11,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Custom methods to check duplicates during registration
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
+    boolean existsByEmail(String email);
 }

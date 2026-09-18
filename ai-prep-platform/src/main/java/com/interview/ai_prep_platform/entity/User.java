@@ -28,4 +28,5 @@ public class User {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
+    private String role = "ROLE_USER";
 }
